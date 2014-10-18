@@ -95,11 +95,17 @@ namespace ConsoleApplication1
             }
 
             Console.ReadKey(false);
-            Console.WriteLine("AsyncSubject<T>");
-            { 
-                
+            Console.WriteLine("AsyncSubject<T> guarda 1 en caché y solo entrrega al onComplete");
+            {
+                var subject = new AsyncSubject<string>();
+                subject.OnNext("a");
+                WriteSequenceToConsole(subject);
+                subject.OnNext("b");
+                subject.OnNext("c");
+                subject.OnCompleted();
             }
 
+            Console.WriteLine("END");
             Console.ReadKey(false);
 
 
