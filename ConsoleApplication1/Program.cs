@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 
@@ -11,26 +12,108 @@ namespace ConsoleApplication1
         static void Main(string[] args)
         {
 
-            Console.WriteLine("1.- Funciones anonimas");
-            Console.WriteLine("2.- RX");
+            Console.WriteLine("0.- Funciones anonimas");
+            Console.WriteLine("1.- RX");
+            Console.WriteLine("2.- RX2");
             var opc = Console.ReadKey(false);
             switch (opc.Key.ToString())
             {
-                case "D1":
+                case "D0":
                     FuncionesAnonimas();
                     break;
-                case "D2":
+                case "D1":
                     RX();
                     break;
+                case "D2":
+                    RX2();
+                    break;
+                case "D3":
+                    RX3();
+                    break;
             }
+        }
+
+        public static void RX3()
+        {
+            var period = TimeSpan.FromSeconds(1);
+            var observable = Observable.Interval(period).Publish();
+            observable.Subscribe(i => Console.WriteLine("subscription : {0}", i));
+            var exit = false;
+            while (!exit)
+            {
+                Console.WriteLine("Press enter to connect, esc to exit.");
+                var key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    var connection = observable.Connect(); //--Connects here--
+                    Console.WriteLine("Press any key to dispose of connection.");
+                    Console.ReadKey();
+                    connection.Dispose(); //--Disconnects here--
+                }
+                if (key.Key == ConsoleKey.Escape)
+                {
+                    exit = true;
+                }
+            }
+        }
+
+        public static void RX2()
+        {
+            {
+                var values = new Subject<int>();
+                values.Subscribe(
+                    value => Console.WriteLine("1st subscription received {0}", value),
+                    ex => Console.WriteLine("Caught an exception : {0}", ex)
+                );
+                values.OnNext(0);
+                values.OnNext(1);
+                values.OnError(new Exception("Dummy exception"));
+            }
+
+            Console.WriteLine("Multiples suscripciones y dispose suscripcion");
+            Console.ReadKey();
+            {
+                var values = new Subject<int>();
+                var firstSubscription = values.Subscribe(value =>
+                Console.WriteLine("1st subscription received {0}", value));
+                var secondSubscription = values.Subscribe(value =>
+                Console.WriteLine("2nd subscription received {0}", value));
+                values.OnNext(0);
+                values.OnNext(1);
+                values.OnNext(2);
+                values.OnNext(3);
+                firstSubscription.Dispose();
+                Console.WriteLine("Disposed of 1st subscription");
+                values.OnNext(4);
+                values.OnNext(5);
+            }
+            Console.ReadKey();
+
+            {
+                var subject = new Subject<int>();
+                subject.Subscribe(
+                    Console.WriteLine,
+                    () => Console.WriteLine("Completed"));
+                subject.OnCompleted();
+                subject.OnNext(2);
+            }
+            Console.ReadKey();
+            Console.WriteLine(".......................");
+            Console.WriteLine("range");
+            {
+                var range = Observable.Range(10, 15);
+                range.Subscribe(Console.WriteLine, () => Console.WriteLine("Completed"));
+            }
+            Console.WriteLine("blocking");
+            Console.ReadKey();
         }
 
         public static void RX()
         {
             Console.WriteLine("IObservable(escupe stream) - IObserver ");
 
-            var numbers = new MySequenceOfNumbers();
-            var observer = new MyConsoleObserver<int>();
+            var numbers = new MySequenceOfNumbers(); // IObservable<int>
+            var observer = new MyConsoleObserver<int>(); // IObserver<T>
             numbers.Subscribe(observer);
 
             Console.ReadKey(false);
